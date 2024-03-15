@@ -8,6 +8,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use App\Notifications\ResetPasswordVerificationNotification;
+use Carbon\Carbon;
 
 class User extends Authenticatable implements MustVerifyEmail
 {
@@ -48,7 +49,9 @@ class User extends Authenticatable implements MustVerifyEmail
     ];
 
     public function sendPasswordResetNotification($token)
+
     {
-        $this->notify(new ResetPasswordVerificationNotification($token));
+        $url=env('APP_URL').'/reset-password?token='.$token.'&email='.$this->email.'&expires='.Carbon::now()->addMinutes(config('auth.passwords.users.expire'))->timestamp;
+        $this->notify(new ResetPasswordVerificationNotification($url));
     }
 }

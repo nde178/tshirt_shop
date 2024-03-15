@@ -7,39 +7,42 @@ use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
 use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Facades\Hash;
 
 class ResetPasswordController extends Controller
 {
 
     public function resetPassword(Request $request)
     {
-
         $request->validate([
             'token' => 'required',
             'email' => 'required|email',
             'password' => 'required|min:6|confirmed',
         ]);
 
-        $status=Password::reset(
+        $status = Password::reset(
             $request->only('email', 'password', 'password_confirmation', 'token'),
-            function ($user, $password) {
-                $user->forceFill([
-                    'password' => bcrypt($password)
-                ])->setRememberToken(Str::random(60))->save();
+            static function ($user) use ($request): void {
+                if ($user->email_verified_at === null) {
+                    $user->forceFill([
+                        'email_verified_at' => now(),
+                    ])->save();
+                }
 
-                event(new PasswordReset($user));
+                $user->forceFill([
+                    'password' => Hash::make($request->password),
+                    'remember_token' => Str::random(60),
+                ])->save();
             }
         );
 
-        if ($status == Password::PASSWORD_RESET) {
-            return [
-                'message' => trans($status),
-                'status' => __('$status'),
-            ];
+        if ($status === Password::PASSWORD_RESET) {
+            return response()->json(['password' => 'Сброс выполнен успешно'], 200);
         }
-        throw ValidationException::withMessages([
-            'email' => [trans($status)],
-        ]);
+
+        return response()->json(['error' => 'Сброс выполнен не успешно'], 400);
+
     }
 
 }
+

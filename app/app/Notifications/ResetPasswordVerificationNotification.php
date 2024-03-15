@@ -11,13 +11,14 @@ use Otp;
 class ResetPasswordVerificationNotification extends Notification
 {
     use Queueable;
+    public $url;
 
     /**
      * Create a new notification instance.
      */
-    public function __construct()
+    public function __construct(string $url)
     {
-
+        $this->url = $url;
     }
 
     /**
@@ -37,7 +38,7 @@ class ResetPasswordVerificationNotification extends Notification
     {
         return (new MailMessage)
                     ->line('The introduction to the notification.')
-                    ->action('Notification Action', url('/'))
+                    ->action('Notification Action', $this->url)
                     ->line('Thank you for using our application!');
     }
 
